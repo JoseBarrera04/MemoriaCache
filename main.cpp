@@ -6,3 +6,15 @@
  * - Politica Reemplazo LFU
  * - Politica Actualizacion WRITE BACK
  */
+
+#include <iostream>
+
+using namespace std;
+
+/**
+ * Main Principal
+ * @return
+ */
+int main() {
+    return 0;
+}
