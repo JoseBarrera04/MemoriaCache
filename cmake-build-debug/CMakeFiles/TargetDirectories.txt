@@ -1,0 +1,3 @@
+C:/Users/JoseB/Desktop/MemoriaCache/cmake-build-debug/CMakeFiles/MemoriaCache.dir
+C:/Users/JoseB/Desktop/MemoriaCache/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/JoseB/Desktop/MemoriaCache/cmake-build-debug/CMakeFiles/rebuild_cache.dir
