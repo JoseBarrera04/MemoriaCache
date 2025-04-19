@@ -8,6 +8,9 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
 
 using namespace std;
 
@@ -17,4 +20,7 @@ using namespace std;
  */
 int main() {
     return 0;
+}
+
+void leerDatos() {
 }
