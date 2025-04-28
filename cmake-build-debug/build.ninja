@@ -55,24 +55,6 @@ build CMakeFiles/MemoriaCache.dir/main.cpp.obj: CXX_COMPILER__MemoriaCache_unsca
   OBJECT_DIR = CMakeFiles\MemoriaCache.dir
   OBJECT_FILE_DIR = CMakeFiles\MemoriaCache.dir
 
-build CMakeFiles/MemoriaCache.dir/model/cpp/DataLine.cpp.obj: CXX_COMPILER__MemoriaCache_unscanned_Debug C$:/Users/JoseB/Desktop/MemoriaCache/model/cpp/DataLine.cpp || cmake_object_order_depends_target_MemoriaCache
-  DEP_FILE = CMakeFiles\MemoriaCache.dir\model\cpp\DataLine.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\MemoriaCache.dir
-  OBJECT_FILE_DIR = CMakeFiles\MemoriaCache.dir\model\cpp
-
-build CMakeFiles/MemoriaCache.dir/model/cpp/CacheSet.cpp.obj: CXX_COMPILER__MemoriaCache_unscanned_Debug C$:/Users/JoseB/Desktop/MemoriaCache/model/cpp/CacheSet.cpp || cmake_object_order_depends_target_MemoriaCache
-  DEP_FILE = CMakeFiles\MemoriaCache.dir\model\cpp\CacheSet.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\MemoriaCache.dir
-  OBJECT_FILE_DIR = CMakeFiles\MemoriaCache.dir\model\cpp
-
-build CMakeFiles/MemoriaCache.dir/model/cpp/Dram.cpp.obj: CXX_COMPILER__MemoriaCache_unscanned_Debug C$:/Users/JoseB/Desktop/MemoriaCache/model/cpp/Dram.cpp || cmake_object_order_depends_target_MemoriaCache
-  DEP_FILE = CMakeFiles\MemoriaCache.dir\model\cpp\Dram.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\MemoriaCache.dir
-  OBJECT_FILE_DIR = CMakeFiles\MemoriaCache.dir\model\cpp
-
 
 # =============================================================================
 # Link build statements for EXECUTABLE target MemoriaCache
@@ -81,7 +63,7 @@ build CMakeFiles/MemoriaCache.dir/model/cpp/Dram.cpp.obj: CXX_COMPILER__MemoriaC
 #############################################
 # Link the executable MemoriaCache.exe
 
-build MemoriaCache.exe: CXX_EXECUTABLE_LINKER__MemoriaCache_Debug CMakeFiles/MemoriaCache.dir/main.cpp.obj CMakeFiles/MemoriaCache.dir/model/cpp/DataLine.cpp.obj CMakeFiles/MemoriaCache.dir/model/cpp/CacheSet.cpp.obj CMakeFiles/MemoriaCache.dir/model/cpp/Dram.cpp.obj
+build MemoriaCache.exe: CXX_EXECUTABLE_LINKER__MemoriaCache_Debug CMakeFiles/MemoriaCache.dir/main.cpp.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\MemoriaCache.dir
