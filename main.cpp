@@ -3,7 +3,7 @@
  *
  * Especificaciones Memoria Cache:
  * - Asociativa 2 Vias
- * - Politica Reemplazo LFU
+ * - Politica Reemplazo LRU
  * - Politica Actualizacion WRITE BACK
  */
 
@@ -49,6 +49,7 @@ int missCount = 0;
 unsigned int getSetIndex(unsigned int address);
 unsigned int getTag(unsigned int address);
 unsigned int getOffset(unsigned int address);
+
 void startCache();
 void loadData(const string& filename);
 void readFromCache(unsigned int address);
@@ -83,7 +84,7 @@ unsigned int getOffset(unsigned int address) {
 }
 
 /**
- *
+ * Inicializar los datos de la cache a su manera predeterminada
  */
 void startCache() {
     for (int i = 0; i < CACHE_SETS; i++) {
@@ -97,7 +98,7 @@ void startCache() {
 }
 
 /**
- *
+ * Funcion para leer los datos de la memoria cache
  * @param filename
  */
 void loadData(const string& filename) {
@@ -116,7 +117,7 @@ void loadData(const string& filename) {
 }
 
 /**
- *
+ * Funcion para leer datos desde la cache
  * @param address
  */
 void readFromCache(unsigned int address) {
@@ -167,7 +168,7 @@ void readFromCache(unsigned int address) {
 }
 
 /**
- *
+ * Funcion para sobreescribir un dato en la memoria cache
  * @param address
  * @param value
  */
@@ -217,11 +218,11 @@ void writeToCache(unsigned int address, unsigned char value) {
         set->lines[j].lru = (j != lruIndex) ? set->lines[j].lru + 1 : 0;
     }
 
-    cout << "Escritura exitosa en el nuevo bloque cargado en caché. Marcando como dirty." << endl;
+    cout << "Escritura exitosa en el nuevo bloque cargado en cache. Marcando como dirty." << endl;
 }
 
 /**
- *
+ * Funcion para leer instrucciones de la cache
  * @param filename
  */
 void loadActions(const string& filename) {
@@ -249,7 +250,7 @@ void loadActions(const string& filename) {
 }
 
 /**
- *
+ * Funcion para imprimir los datos de la cache
  */
 void printInfoCache() {
     ofstream outputFile("cache_output.txt");
@@ -259,7 +260,7 @@ void printInfoCache() {
     }
 
     cout << "\nEstado de la Cache:\n";
-    cout << "Conjunto | Via | Valid | Dirty | Tag | Rango Direccion | Datos\n";
+    cout << "Conjunto | Via | Valid | Dirty | Tag | Rango Direccion | Datos |\n";
     cout << "---------------------------------------------------------------\n";
 
     for (int i = 0; i < CACHE_SETS; i++) {
@@ -287,7 +288,7 @@ void printInfoCache() {
 }
 
 /**
- *
+ * Funcion para mostrar datos de los miss and hits
  */
 void printCacheStatistics() {
     ofstream file("miss_hits_plot.txt");
