@@ -13,13 +13,14 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <random>
 
 using namespace std;
 
 // Definiciones
 #define BLOCK_SIZE 16
 #define MEMORY_SIZE 2048
-#define CACHE_SETS 32
+#define CACHE_SETS 16
 #define AXS 2
 
 // Structs
@@ -30,7 +31,7 @@ struct CacheLine {
     int lru;
     vector<unsigned char> data;
 
-    CacheLine() : valid(false), dirty(false), lru(0), data(BLOCK_SIZE, 0) {}
+    CacheLine() : tag(0), valid(false), dirty(false), lru(0), data(BLOCK_SIZE, 0) {}
 };
 
 struct CacheSet {
@@ -103,8 +104,18 @@ void startCache() {
  */
 void loadData(const string& filename) {
     ifstream file("C:/Users/JoseB/Desktop/MemoriaCache/data/memory.txt");
-    if (!file.is_open()) {
-        cerr << "Error al abrir el archivo de datos de memoria." << endl;
+    if (!file.is_open() || file.peek() == ifstream::traits_type::eof()) {
+        // Archivo no existe o está vacío: llenar con datos aleatorios (0-9, A-F)
+        srand(time(NULL));
+        for (int i = 0; i < MEMORY_SIZE; i++) {
+            int tipo = rand() % 2; // 0: número, 1: letra
+            if (tipo == 0) {
+                memory[i] = '0' + (rand() % 256); // '0' a '256'
+            } else {
+                memory[i] = 'A' + (rand() % 6);  // 'A' a 'F'
+            }
+        }
+        cout << "Archivo de memoria no encontrado o vacío. Memoria inicializada con datos aleatorios." << endl;
         return;
     }
 
@@ -233,18 +244,26 @@ void loadActions(const string& filename) {
     }
 
     string action;
+    string addressStr;
     unsigned int address;
     int value;
 
-    while (file >> action >> hex >> address) {
+    while (file >> action >> addressStr) {
+        if (addressStr.size() > 2 && (addressStr[0] == '0') && (addressStr[1] == 'x' || addressStr[1] == 'X')) {
+            address = stoul(addressStr, nullptr, 16);
+        } else {
+            address = stoul(addressStr, nullptr, 10);
+        }
+
         if (action == "READ") {
             readFromCache(address);
         } else if (action == "WRITE") {
-            file >> dec >> value;
+            file >> value;
             writeToCache(address, static_cast<unsigned char>(value));
         } else {
             cerr << "Accion desconocida: " << action << endl;
         }
+        printInfoCache();
     }
     file.close();
 }
@@ -253,8 +272,8 @@ void loadActions(const string& filename) {
  * Funcion para imprimir los datos de la cache
  */
 void printInfoCache() {
-    ofstream outputFile("cache_output.txt");
-    if (!outputFile.is_open()) {
+    FILE *file = fopen("cache_output.txt", "w");
+    if (file == NULL) {
         cerr << "Error al crear el archivo de salida." << endl;
         return;
     }
@@ -269,22 +288,22 @@ void printInfoCache() {
             unsigned int blockStartAddress = (line->tag * CACHE_SETS + i) * BLOCK_SIZE;
             unsigned int blockEndAddress = blockStartAddress + BLOCK_SIZE - 1;
 
-            cout << setw(8) << i << " | " << j << " | " << line->valid << " | " << line->dirty << " | "
+            cout << i << " | " << j << " | " << line->valid << " | " << line->dirty << " | "
                  << setw(5) << line->tag << " | " << hex << setw(8) << setfill('0')
                  << blockStartAddress << "-" << setw(8) << blockEndAddress << " | " << dec;
 
             for (int k = 0; k < BLOCK_SIZE; k++) {
-                cout << " " << setw(3) << static_cast<int>(line->data[k]);
+                cout << " " << static_cast<int>(line->data[k]);
             }
             cout << endl;
         }
     }
 
     for (int k = 0; k < MEMORY_SIZE; k++) {
-        outputFile << static_cast<int>(memory[k]) << endl;
+        fprintf(file, "%d\n", memory[k]);
     }
     cout << "---------------------------------------------------------------\n";
-    outputFile.close();
+    fclose(file);
 }
 
 /**
