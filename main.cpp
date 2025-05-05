@@ -11,9 +11,10 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
-#include <fstream>
 #include <string>
 #include <random>
+#include <cstdio>
+#include <cstring>
 
 using namespace std;
 
@@ -50,6 +51,7 @@ int missCount = 0;
 unsigned int getSetIndex(unsigned int address);
 unsigned int getTag(unsigned int address);
 unsigned int getOffset(unsigned int address);
+void updateMemoryFile();
 
 void startCache();
 void loadData(const string& filename);
@@ -85,6 +87,24 @@ unsigned int getOffset(unsigned int address) {
 }
 
 /**
+ * Actualizar el archivo memory.txt con el contenido de la memoria
+ */
+void updateMemoryFile() {
+    FILE *file = fopen("C:/Users/JoseB/Desktop/MemoriaCache/data/memory.txt", "w");
+    if (file == NULL) {
+        cerr << "Error al abrir memory.txt para escritura." << endl;
+        return;
+    }
+
+    for (int k = 0; k < MEMORY_SIZE; k++) {
+        fprintf(file, "%d\n", memory[k]);
+    }
+
+    fclose(file);
+    cout << "memory.txt actualizado tras write-back." << endl;
+}
+
+/**
  * Inicializar los datos de la cache a su manera predeterminada
  */
 void startCache() {
@@ -103,9 +123,9 @@ void startCache() {
  * @param filename
  */
 void loadData(const string& filename) {
-    ifstream file("C:/Users/JoseB/Desktop/MemoriaCache/data/memory.txt");
-    if (!file.is_open() || file.peek() == ifstream::traits_type::eof()) {
-        // Archivo no existe o está vacío: llenar con datos aleatorios (0-9, A-F)
+    FILE *file = fopen("C:/Users/JoseB/Desktop/MemoriaCache/data/memory.txt", "r");
+    int valueAux;
+    if (file == NULL || fscanf(file, "%d", &valueAux) != 1) {
         srand(time(NULL));
         for (int i = 0; i < MEMORY_SIZE; i++) {
             int tipo = rand() % 2; // 0: número, 1: letra
@@ -116,15 +136,16 @@ void loadData(const string& filename) {
             }
         }
         cout << "Archivo de memoria no encontrado o vacío. Memoria inicializada con datos aleatorios." << endl;
+        updateMemoryFile();
         return;
     }
 
     int i = 0;
     int value;
-    while (file >> value && i < MEMORY_SIZE) {
+    while (fscanf(file, "%d", &value) == 1 && i < MEMORY_SIZE) {
         memory[i++] = static_cast<unsigned char>(value);
     }
-    file.close();
+    fclose(file);
 }
 
 /**
@@ -157,9 +178,11 @@ void readFromCache(unsigned int address) {
 
     if (set->lines[lruIndex].valid && set->lines[lruIndex].dirty) {
         unsigned int blockStart = (set->lines[lruIndex].tag * CACHE_SETS + setIndex) * BLOCK_SIZE;
+        cout << "Write-back: Actualizando memoria en dirección " << hex << blockStart << dec << endl;
         for (int i = 0; i < BLOCK_SIZE; i++) {
             memory[blockStart + i] = set->lines[lruIndex].data[i];
         }
+        updateMemoryFile();
     }
 
     unsigned int blockStart = (address / BLOCK_SIZE) * BLOCK_SIZE;
@@ -210,9 +233,11 @@ void writeToCache(unsigned int address, unsigned char value) {
 
     if (set->lines[lruIndex].valid && set->lines[lruIndex].dirty) {
         unsigned int blockStart = (set->lines[lruIndex].tag * CACHE_SETS + setIndex) * BLOCK_SIZE;
+        cout << "Write-back: Actualizando memoria en dirección " << hex << blockStart << dec << endl;
         for (int i = 0; i < BLOCK_SIZE; i++) {
             memory[blockStart + i] = set->lines[lruIndex].data[i];
         }
+        updateMemoryFile();
     }
 
     unsigned int blockStart = (address / BLOCK_SIZE) * BLOCK_SIZE;
@@ -237,47 +262,70 @@ void writeToCache(unsigned int address, unsigned char value) {
  * @param filename
  */
 void loadActions(const string& filename) {
-    ifstream file("C:/Users/JoseB/Desktop/MemoriaCache/data/actions.txt");
-    if (!file.is_open()) {
-        cerr << "Error al abrir el archivo de acciones." << endl;
+    FILE *file = fopen("data/actions.txt", "r");
+    if (file == NULL || fgetc(file) == EOF) {
+        if (file != NULL) fclose(file);
+        cout << "Archivo de acciones vacío o no encontrado. Generando instrucciones aleatorias." << endl;
+        srand(time(NULL));
+        int numActions = 10 + rand() % 11; // Entre 10 y 20 acciones
+        for (int i = 0; i < numActions; i++) {
+            int actionType = rand() % 2; // 0: READ, 1: WRITE
+            unsigned int address = rand() % MEMORY_SIZE; // Rango: 0 a 2047
+            if (actionType == 0) {
+                cout << "Generado: READ " << hex << address << dec << endl;
+                readFromCache(address);
+            } else {
+                unsigned char value = rand() % 256; // Valor entre 0 y 255
+                cout << "Generado: WRITE " << hex << address << " " << static_cast<int>(value) << dec << endl;
+                writeToCache(address, value);
+            }
+        }
         return;
     }
 
-    string action;
-    string addressStr;
+    rewind(file);
+    char action[10];
+    char addressStr[20];
     unsigned int address;
     int value;
 
-    while (file >> action >> addressStr) {
-        if (addressStr.size() > 2 && (addressStr[0] == '0') && (addressStr[1] == 'x' || addressStr[1] == 'X')) {
-            address = stoul(addressStr, nullptr, 16);
+    while (fscanf(file, "%9s %19s", action, addressStr) == 2) {
+        string addr(addressStr);
+        if (addr.size() > 2 && addr[0] == '0' && (addr[1] == 'x' || addr[1] == 'X')) {
+            address = stoul(addr, nullptr, 16);
         } else {
-            address = stoul(addressStr, nullptr, 10);
+            address = stoul(addr, nullptr, 10);
         }
 
-        if (action == "READ") {
+        if (strcmp(action, "READ") == 0) {
             readFromCache(address);
-        } else if (action == "WRITE") {
-            file >> value;
+        } else if (strcmp(action, "WRITE") == 0) {
+            if (fscanf(file, "%d", &value) != 1) {
+                cerr << "Error al leer el valor para WRITE." << endl;
+                continue;
+            }
             writeToCache(address, static_cast<unsigned char>(value));
         } else {
             cerr << "Accion desconocida: " << action << endl;
         }
-        printInfoCache();
     }
-    file.close();
+
+    fclose(file);
 }
 
 /**
  * Funcion para imprimir los datos de la cache
  */
 void printInfoCache() {
-    FILE *file = fopen("cache_output.txt", "w");
+    FILE *file = fopen("C:/Users/JoseB/Desktop/MemoriaCache/data/cacheOutput.txt", "w");
     if (file == NULL) {
         cerr << "Error al crear el archivo de salida." << endl;
         return;
     }
 
+    fprintf(file, "Estado de la Cache:\n");
+    fprintf(file, "Conjunto | Via | Valid | Dirty | Tag | Rango Direccion | Datos |\n");
+    fprintf(file, "---------------------------------------------------------------\n");
     cout << "\nEstado de la Cache:\n";
     cout << "Conjunto | Via | Valid | Dirty | Tag | Rango Direccion | Datos |\n";
     cout << "---------------------------------------------------------------\n";
@@ -288,10 +336,15 @@ void printInfoCache() {
             unsigned int blockStartAddress = (line->tag * CACHE_SETS + i) * BLOCK_SIZE;
             unsigned int blockEndAddress = blockStartAddress + BLOCK_SIZE - 1;
 
+            fprintf(file, "%d | %d | %d | %d | %5u | %08x-%08x |", i, j, line->valid, line->dirty, line->tag, blockStartAddress, blockEndAddress);
+            for (int k = 0; k < BLOCK_SIZE; k++) {
+                fprintf(file, " %d", static_cast<int>(line->data[k]));
+            }
+            fprintf(file, "\n");
+
             cout << i << " | " << j << " | " << line->valid << " | " << line->dirty << " | "
                  << setw(5) << line->tag << " | " << hex << setw(8) << setfill('0')
                  << blockStartAddress << "-" << setw(8) << blockEndAddress << " | " << dec;
-
             for (int k = 0; k < BLOCK_SIZE; k++) {
                 cout << " " << static_cast<int>(line->data[k]);
             }
@@ -299,9 +352,7 @@ void printInfoCache() {
         }
     }
 
-    for (int k = 0; k < MEMORY_SIZE; k++) {
-        fprintf(file, "%d\n", memory[k]);
-    }
+    fprintf(file, "---------------------------------------------------------------\n");
     cout << "---------------------------------------------------------------\n";
     fclose(file);
 }
@@ -310,8 +361,8 @@ void printInfoCache() {
  * Funcion para mostrar datos de los miss and hits
  */
 void printCacheStatistics() {
-    ofstream file("miss_hits_plot.txt");
-    if (!file.is_open()) {
+    FILE *file = fopen("C:/Users/JoseB/Desktop/MemoriaCache/data/misshitsplot.txt", "w");
+    if (file == NULL) {
         cerr << "Error al crear el archivo de estadísticas." << endl;
         return;
     }
@@ -323,7 +374,9 @@ void printCacheStatistics() {
     cout << fixed << setprecision(2);
     cout << "Hit Percentage: " << hitPercentage << "%\n";
     cout << "Miss Percentage: " << missPercentage << "%\n";
-    file << "Hit Percentage: " << hitPercentage << "%\n";
-    file << "Miss Percentage: " << missPercentage << "%\n";
-    file.close();
+
+    fprintf(file, "Hit Percentage: %.2f%%\n", hitPercentage);
+    fprintf(file, "Miss Percentage: %.2f%%\n", missPercentage);
+
+    fclose(file);
 }
